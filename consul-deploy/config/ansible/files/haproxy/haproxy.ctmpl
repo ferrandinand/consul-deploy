@@ -1,0 +1,20 @@
+global
+    daemon
+
+defaults
+    mode http
+    timeout connect 5000
+    timeout client 50000
+    timeout server 50000
+    option http-server-close
+    balance roundrobin
+
+frontend http
+    bind    :8000
+    default_backend app_pool
+
+backend app_pool
+{{range $c,$d:=service "rack1"}}
+    server {{.Node}}-{{$c}} {{.Address}}:{{.Port}} check
+{{end}}
+

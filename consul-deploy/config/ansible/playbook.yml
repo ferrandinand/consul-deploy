@@ -1,0 +1,57 @@
+---
+- hosts: docker-consul 
+  tasks:
+  - name: install transport https
+    apt: 
+       pkg=apt-transport-https state=present
+
+  - name: install ca-certificates
+    apt:
+       pkg=ca-certificates
+       state=present
+
+  - name: add docker key
+    apt_key:
+       keyserver=hkp://p80.pool.sks-keyservers.net:80
+       id=58118E89F3A912897C070ADBF76221572C52609D
+ 
+  - name: add docker repo
+    apt_repository:
+       repo="deb https://apt.dockerproject.org/repo ubuntu-trusty main"
+ 
+  - name: install docker
+    apt:    
+       pkg=docker-engine
+       state=present
+
+  - name: start docker
+    service:
+       name=docker
+       state=started
+
+  - name: install python-setuptools
+    apt:
+      pkg=python-setuptools
+      state=present
+
+  - name: install pip
+    easy_install:
+       name=pip
+       state=present
+
+  - name: install docker py
+    pip:
+       name=docker-py
+       state=present
+
+  - name: pull and run Docker consul
+    docker:
+        name: consul-{{ ansible_hostname }}
+        image: progrium/consul
+        restart_policy: always
+        state: started
+        command: "-server -bootstrap -ui-dir /ui"
+        ports: 
+        - "0.0.0.0:80:8500"
+        - "8400:8400"
+        - "8600:53/udp"

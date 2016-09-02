@@ -1,0 +1,118 @@
+---
+- hosts: docker-consul 
+  tasks:
+  - name: Creates directory for agent
+    file:
+        path: /etc/consul.d
+        state: directory
+
+  - name: Creates directory for haproxy
+    file:
+        path: /etc/haproxy
+        state: directory
+  
+  - name: Creates directory for registrator
+    file:
+        path: /etc/registrator
+        state: directory
+
+  - name: Creates directory for rack app
+    file:
+        path: /etc/rack
+        state: directory
+
+ #  - copy: src=files/web.json dest=/etc/consul.d mode=0777
+ # Files and build for ha proxy
+  - copy: src=files/haproxy/Dockerfile dest=/etc/haproxy/
+
+  - copy: src=files/haproxy/haproxy.ctmpl dest=/etc/haproxy/
+
+  - copy: src=files/haproxy/haproxy.json dest=/etc/haproxy/
+
+  - command: docker build -t haproxy /etc/haproxy 
+
+ #Files and build for registrator
+  - copy: src=files/registrator/Dockerfile dest=/etc/registrator/
+
+  - command: docker build -t registrator /etc/registrator
+
+  #Files and build for registrator
+  - copy: src=files/rack/Dockerfile dest=/etc/rack/
+
+  - command: docker build -t rack /etc/rack
+
+  - name: pull and run Docker consul
+    docker:
+        name: consul2-server
+        image: progrium/consul
+        restart_policy: always
+        state: started
+        volumes: "/etc/consul.d:/etc/consul.d"
+        command: "-server -join 172.17.0.2"
+
+  #- shell: export CONSUL2=$(docker inspect -f '{{'{{.NetworkSettings.IPAddress}}'}}' consul2-server)
+
+  - name: pull and run Docker consul
+    docker:
+        name: consul3-{{ ansible_hostname }}
+        image: progrium/consul
+        restart_policy: always
+        state: started
+        volumes: "/etc/consul.d:/etc/consul.d"
+        command: "-server -join 172.17.0.2"
+
+  - name: Creates directory for agent
+    file: 
+        path: /etc/consul.d
+        state: directory 
+        mode: 0777
+  
+  - copy: src=files/web.json dest=/etc/consul.d mode=0777
+
+  - name: pull and run Docker consul
+    docker:
+        name: consul4-{{ ansible_hostname }}
+        image: progrium/consul
+        restart_policy: always
+        state: started
+        volumes: "/etc/consul.d:/etc/consul.d"
+        command: "-join 172.17.0.2"
+
+  - name: Registrator
+    docker:
+        name: registrator-{{ ansible_hostname }}
+        image: gliderlabs/registrator
+        restart_policy: always
+        state: started
+        command: "-ip {{ ansible_default_ipv4.address }}  consul://{{ ansible_default_ipv4.address }}:80"
+        volumes: "/var/run/docker.sock:/tmp/docker.sock"
+
+  - name: rack1
+    docker:
+        name: rack1-{{ ansible_hostname }}
+        image: rack
+        restart_policy: always
+        state: started
+        command: "--dns 172.17.0.2 -e SERVICE_NAME=rack1 -e SERVICE_TAGS=www -e PORT=83 -d rack"
+        ports:
+        - "0.0.0.0:84:83"
+
+  - name: rack2
+    docker:
+        name: rack2-{{ ansible_hostname }}
+        image: rack
+        restart_policy: always
+        state: started
+        command: "--dns 172.17.0.2 -e SERVICE_NAME=rack1 -e SERVICE_TAGS=www -e PORT=83  -d rack"
+        ports:
+        - "0.0.0.0:83:83"
+
+   - name: haproxy
+     docker:
+        name: 
+        image: haproxy
+        restart_policy: always
+        state: started
+        command: "-e CONSUL_HTTP_ADDR=107.170.5.31:80 -e SERVICE_NAME=www --dns 172.17.0.2 haproxy"
+        ports:
+        - "0.0.0.0:8000:8000"
