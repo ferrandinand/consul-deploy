@@ -20,7 +20,7 @@ I was quite insterested in what was explained so I decided to play a little more
 
 # Running the app
 
-1.- Modify consul-deploy/consul-deploy/config/digitalocean.sh and insert your Digital Ocean token linked with your user.ç
+1.- Modify consul-deploy/consul-deploy/config/digitalocean.sh and insert your Digital Ocean token linked with your user.
 
 2.- Run consul-deploy/consul-deploy/config/consul-stack.sh to create the stack (Digital Ocean droplet - provision to run docker in the instances - run docker images)
 
