@@ -1,6 +1,6 @@
 # consul-deploy
 
-Consul-deploy is a simple app created to automate the deployment of some docker images in one Digital Ocean droplet:
+Consul-deploy is a simple app created to automate the deployment of some docker images in one Digital Ocean droplet to learn how Consul works:
 - 3 Consul servers with UI listening
 - Consul agent
 - Registrator
